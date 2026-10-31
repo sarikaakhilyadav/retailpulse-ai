@@ -1,6 +1,13 @@
 from pathlib import Path
 import pandas as pd
 
+from data_quality import (
+    count_missing_values,
+    count_duplicate_rows,
+    count_non_positive_values,
+    count_cancellations,
+)
+
 DATASET_PATH = (
     Path(__file__).resolve().parent.parent
     / "data"
@@ -10,27 +17,33 @@ DATASET_PATH = (
 
 def validate_dataset():
     if not DATASET_PATH.exists():
-        print("Dataset not found.")
-        print(f"Expected location: {DATASET_PATH}")
+        print(f"Dataset not found: {DATASET_PATH}")
         return
 
     workbook = pd.ExcelFile(DATASET_PATH)
 
     for sheet_name in workbook.sheet_names:
-        df = pd.read_excel(workbook, sheet_name=sheet_name)
+        df = pd.read_excel(
+            workbook, sheet_name=sheet_name
+        )
 
         print(f"\n--- Validating: {sheet_name} ---")
         print(f"Total records: {len(df)}")
 
         print("\nMissing values:")
-        print(df.isnull().sum())
+        print(count_missing_values(df))
 
-        print(f"\nDuplicate rows: {df.duplicated().sum()}")
+        print(
+            "Duplicate rows:",
+            count_duplicate_rows(df)
+        )
 
         if "Quantity" in df.columns:
             print(
                 "Non-positive quantities:",
-                (df["Quantity"] <= 0).sum()
+                count_non_positive_values(
+                    df, "Quantity"
+                )
             )
 
         price_column = next(
@@ -42,7 +55,9 @@ def validate_dataset():
         if price_column:
             print(
                 "Non-positive prices:",
-                (df[price_column] <= 0).sum()
+                count_non_positive_values(
+                    df, price_column
+                )
             )
 
         invoice_column = next(
@@ -52,15 +67,11 @@ def validate_dataset():
         )
 
         if invoice_column:
-            cancellations = (
-                df[invoice_column]
-                .astype(str)
-                .str.startswith("C")
-                .sum()
-            )
             print(
                 "Cancellation records:",
-                cancellations
+                count_cancellations(
+                    df, invoice_column
+                )
             )
 
 
