@@ -55,7 +55,58 @@ class TestDataQuality(unittest.TestCase):
             count_non_positive_values(
                 self.df, "Unknown"
             )
+    def test_empty_dataframe(self):
+        empty_df = pd.DataFrame({
+            "Invoice": pd.Series(dtype="string"),
+            "Quantity": pd.Series(dtype="int64"),
+            "Price": pd.Series(dtype="float64"),
+        })
 
+        self.assertEqual(
+            count_duplicate_rows(empty_df), 0
+        )
+        self.assertEqual(
+            count_non_positive_values(
+                empty_df, "Quantity"
+            ), 0
+        )
+        self.assertEqual(
+            count_cancellations(
+                empty_df, "Invoice"
+            ), 0
+        )
+
+    def test_missing_values_are_not_non_positive(self):
+        df = pd.DataFrame({
+            "Quantity": [None, 0, -2, 5]
+        })
+
+        self.assertEqual(
+            count_non_positive_values(
+                df, "Quantity"
+            ), 2
+        )
+
+    def test_missing_invoice_values(self):
+        df = pd.DataFrame({
+            "Invoice": [None, "C1001", "1002"]
+        })
+
+        self.assertEqual(
+            count_cancellations(
+                df, "Invoice"
+            ), 1
+        )
+
+    def test_missing_invoice_column_raises_error(self):
+        df = pd.DataFrame({
+            "Quantity": [1, 2]
+        })
+
+        with self.assertRaises(ValueError):
+            count_cancellations(
+                df, "Invoice"
+    )
 
 if __name__ == "__main__":
     unittest.main()
