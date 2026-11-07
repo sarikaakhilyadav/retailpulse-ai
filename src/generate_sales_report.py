@@ -4,55 +4,52 @@ import pandas as pd
 from sales_kpis import calculate_sales_kpis
 
 
-DATASET_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "online_retail_II.xlsx"
-)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATASET_PATH = PROJECT_ROOT / "data" / "online_retail_II.xlsx"
+OUTPUT_PATH = PROJECT_ROOT / "reports" / "sales_kpi_summary.csv"
 
 
 def generate_sales_report():
     if not DATASET_PATH.exists():
         print(f"Dataset not found: {DATASET_PATH}")
-        print(
-            "Download the dataset and place it "
-            "in the data folder."
-        )
         return
 
     workbook = pd.ExcelFile(DATASET_PATH)
+    report_rows = []
 
     for sheet_name in workbook.sheet_names:
         df = pd.read_excel(
             workbook, sheet_name=sheet_name
         )
 
-        # Standardise column names across workbook versions
         df = df.rename(columns={
             "InvoiceNo": "Invoice",
             "UnitPrice": "Price",
         })
 
         results = calculate_sales_kpis(df)
+        results["sheet_name"] = sheet_name
+        report_rows.append(results)
 
         print(
             f"\n--- Sales KPI Report: {sheet_name} ---"
         )
-        print(
-            f"Total Revenue: "
-            f"£{results['total_revenue']:,.2f}"
+
+        for metric, value in results.items():
+            print(f"{metric}: {value}")
+
+    if report_rows:
+        OUTPUT_PATH.parent.mkdir(
+            parents=True, exist_ok=True
         )
-        print(
-            f"Units Sold: "
-            f"{results['total_units_sold']:,}"
+
+        report_df = pd.DataFrame(report_rows)
+        report_df.to_csv(
+            OUTPUT_PATH, index=False
         )
+
         print(
-            f"Transactions: "
-            f"{results['total_transactions']:,}"
-        )
-        print(
-            f"Average Order Value: "
-            f"£{results['average_order_value']:,.2f}"
+            f"\nReport saved to: {OUTPUT_PATH}"
         )
 
 
