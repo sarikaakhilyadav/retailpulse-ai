@@ -1,20 +1,31 @@
+import argparse
 from pathlib import Path
+
 import pandas as pd
 
 from sales_kpis import calculate_sales_kpis
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATASET_PATH = PROJECT_ROOT / "data" / "online_retail_II.xlsx"
+DEFAULT_DATASET = PROJECT_ROOT / "data" / "online_retail_II.xlsx"
 OUTPUT_PATH = PROJECT_ROOT / "reports" / "sales_kpi_summary.csv"
 
+# Keep the existing constant for compatibility with tests.
+DATASET_PATH = DEFAULT_DATASET
 
-def generate_sales_report():
-    if not DATASET_PATH.exists():
-        print(f"Dataset not found: {DATASET_PATH}")
+
+def generate_sales_report(dataset_path=None):
+    source = (
+        Path(dataset_path)
+        if dataset_path is not None
+        else DATASET_PATH
+    )
+
+    if not source.exists():
+        print(f"Dataset not found: {source}")
         return
 
-    workbook = pd.ExcelFile(DATASET_PATH)
+    workbook = pd.ExcelFile(source)
     report_rows = []
 
     for sheet_name in workbook.sheet_names:
@@ -31,10 +42,7 @@ def generate_sales_report():
         results["sheet_name"] = sheet_name
         report_rows.append(results)
 
-        print(
-            f"\n--- Sales KPI Report: {sheet_name} ---"
-        )
-
+        print(f"\n--- Sales KPI Report: {sheet_name} ---")
         for metric, value in results.items():
             print(f"{metric}: {value}")
 
@@ -42,16 +50,21 @@ def generate_sales_report():
         OUTPUT_PATH.parent.mkdir(
             parents=True, exist_ok=True
         )
-
-        report_df = pd.DataFrame(report_rows)
-        report_df.to_csv(
+        pd.DataFrame(report_rows).to_csv(
             OUTPUT_PATH, index=False
         )
-
-        print(
-            f"\nReport saved to: {OUTPUT_PATH}"
-        )
+        print(f"\nReport saved to: {OUTPUT_PATH}")
 
 
 if __name__ == "__main__":
-    generate_sales_report()
+    parser = argparse.ArgumentParser(
+        description="Generate RetailPulse AI sales KPI reports."
+    )
+    parser.add_argument(
+        "--dataset",
+        type=Path,
+        default=None,
+        help="Path to an Excel retail dataset.",
+    )
+    args = parser.parse_args()
+    generate_sales_report(args.dataset)
