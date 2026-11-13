@@ -101,6 +101,48 @@ class TestSalesReport(unittest.TestCase):
                 report.loc[0, "average_order_value"], 20.0
             )
 
+    
+    def test_alternative_column_names(self):
+        sample = pd.DataFrame({
+            "InvoiceNo": ["3001", "3002", "C3003"],
+            "Quantity": [3, 2, -1],
+            "UnitPrice": [10.0, 20.0, 10.0],
+        })
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            dataset_path = root / "alternative_columns.xlsx"
+            output_path = root / "alternative_report.csv"
+
+            sample.to_excel(dataset_path, index=False)
+
+            with patch.object(
+                generate_sales_report,
+                "OUTPUT_PATH",
+                output_path,
+            ):
+                generate_sales_report.generate_sales_report(
+                    dataset_path=dataset_path
+                )
+
+            self.assertTrue(output_path.exists())
+
+            report = pd.read_csv(output_path)
+
+            self.assertEqual(len(report), 1)
+            self.assertEqual(
+                report.loc[0, "total_revenue"], 70.0
+            )
+            self.assertEqual(
+                report.loc[0, "total_units_sold"], 5
+            )
+            self.assertEqual(
+                report.loc[0, "total_transactions"], 2
+            )
+            self.assertEqual(
+                report.loc[0, "average_order_value"], 35.0
+                      )
+
 
 
 if __name__ == "__main__":
