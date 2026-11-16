@@ -4,11 +4,14 @@ from pathlib import Path
 import pandas as pd
 
 from sales_kpis import calculate_sales_kpis
-
+from sales_trends import calculate_monthly_sales
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DATASET = PROJECT_ROOT / "data" / "online_retail_II.xlsx"
 OUTPUT_PATH = PROJECT_ROOT / "reports" / "sales_kpi_summary.csv"
+MONTHLY_OUTPUT_PATH = (
+    PROJECT_ROOT / "reports" / "monthly_sales.csv"
+)
 
 # Keep the existing constant for compatibility with tests.
 DATASET_PATH = DEFAULT_DATASET
