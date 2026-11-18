@@ -144,6 +144,62 @@ class TestSalesReport(unittest.TestCase):
                       )
 
 
+    def test_monthly_sales_csv_export(self):
+        sample = pd.DataFrame({
+            "Invoice": [
+                "1001", "1002", "1003", "C1004"
+            ],
+            "InvoiceDate": [
+                "2026-01-05",
+                "2026-01-15",
+                "2026-02-10",
+                "2026-02-12",
+            ],
+            "Quantity": [2, 3, 1, -1],
+            "Price": [10.0, 5.0, 20.0, 10.0],
+        })
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            dataset_path = root / "monthly_sample.xlsx"
+            kpi_output = root / "sales_kpi_summary.csv"
+            monthly_output = root / "monthly_sales.csv"
+
+            sample.to_excel(dataset_path, index=False)
+
+            with patch.object(
+                generate_sales_report,
+                "OUTPUT_PATH",
+                kpi_output,
+            ), patch.object(
+                generate_sales_report,
+                "MONTHLY_OUTPUT_PATH",
+                monthly_output,
+            ):
+                generate_sales_report.generate_sales_report(
+                    dataset_path=dataset_path
+                )
+
+            self.assertTrue(kpi_output.exists())
+            self.assertTrue(monthly_output.exists())
+
+            monthly = pd.read_csv(monthly_output)
+
+            self.assertEqual(len(monthly), 2)
+            self.assertEqual(
+                monthly.loc[0, "Month"], "2026-01"
+            )
+            self.assertEqual(
+                monthly.loc[0, "TotalRevenue"], 35.0
+            )
+            self.assertEqual(
+                monthly.loc[1, "Month"], "2026-02"
+            )
+            self.assertEqual(
+                monthly.loc[1, "TotalRevenue"], 20.0
+            )
+
+
 
 if __name__ == "__main__":
     unittest.main()
