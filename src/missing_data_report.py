@@ -28,6 +28,22 @@ def generate_missing_data_report(dataset_path=DATASET_PATH):
             ).round(2),
         })
 
+        
+        report = report.sort_values(
+            by="Missing Percentage",
+            ascending=False
+        )
+
+        report["Data Quality Status"] = report[
+            "Missing Percentage"
+        ].apply(
+            lambda percentage: (
+                "Complete" if percentage == 0
+                else "Needs Review"
+            )
+        )
+        
+
         print(report)
 
 
